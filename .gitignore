@@ -1,0 +1,16 @@
+# Datos del caso: son de la empresa y no se suben (regla del curso)
+data/raw/*
+!data/raw/.gitkeep
+data/cache/
+*.sqlite
+*.db
+origen_*.csv
+origen_*.json
+# Resultados: se regeneran con `python -m salmonera`
+results/
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
