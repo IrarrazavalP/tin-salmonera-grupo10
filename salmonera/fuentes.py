@@ -16,7 +16,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from .config import CACHE, DATOS
+from .config import ARCHIVOS_CASO, CACHE, DATOS, REPO_CURSO
 from .limpieza import Cobertura, a_entero, a_fecha, a_id, a_mes, a_numero, es_basura
 
 
@@ -88,6 +88,31 @@ def limpiar_operacion(op: pd.DataFrame, jaulas: pd.DataFrame, cob: Cobertura) ->
     cob.registrar("operacion_diaria", total, motivos)
     df = df.sort_values(["jaula_id", "fecha"]).reset_index(drop=True)
     df["fecha"] = pd.to_datetime(df["fecha"])
+    return corregir_mortalidad(df, cob)
+
+
+def corregir_mortalidad(df: pd.DataFrame, cob: Cobertura, umbral: int = 1000) -> pd.DataFrame:
+    """Mortalidad mal digitada: la población del día siguiente manda.
+
+    En el registro, la población de un día ya descuenta los muertos del día
+    anterior (pasa en el 98 % de los días). Si un día declara al menos `umbral`
+    muertos y la población del día siguiente no cae en esa cantidad, se reemplaza
+    por la caída real de población.
+    """
+    df = df.copy()
+    g = df.groupby("jaula_id")
+    siguiente = g["poblacion"].shift(-1)
+    consecutivo = (g["fecha"].shift(-1) - df["fecha"]).dt.days == 1
+    caida = df["poblacion"] - siguiente
+    mal = (
+        (df["mortalidad_n"] >= umbral)
+        & consecutivo
+        & (caida >= 0)
+        & ((caida - df["mortalidad_n"]).abs() > 0.01 * df["mortalidad_n"])
+    )
+    df["mortalidad_corregida"] = mal
+    df.loc[mal, "mortalidad_n"] = caida[mal]
+    cob.corregir("operacion_diaria", "mortalidad que no calza con la caída de población del día siguiente", int(mal.sum()))
     return df
 
 
@@ -137,7 +162,7 @@ def leer_precios(ruta: Path, cob: Cobertura) -> pd.DataFrame:
 
 def etapa_de_tipo(tipo: str) -> str:
     t = tipo.lower()
-    if "pigment" in t:
+    if t.startswith("pig"):
         return "pigmentado"
     if "200" in t:
         return "engorda 200"
@@ -147,7 +172,7 @@ def etapa_de_tipo(tipo: str) -> str:
 
 
 # ------------------------------------------------------------------- JSON
-def leer_eventos(ruta: Path, cob: Cobertura) -> pd.DataFrame:
+def leer_eventos(ruta: Path, cob: Cobertura, centros_validos: set[str] | None = None) -> pd.DataFrame:
     """Un renglón por evento, con su lista de jaulas (vacía si no vienen identificadas)."""
     crudo = json.loads(ruta.read_text(encoding="utf-8"))
     eventos = crudo["eventos"] if isinstance(crudo, dict) else crudo
@@ -165,8 +190,16 @@ def leer_eventos(ruta: Path, cob: Cobertura) -> pd.DataFrame:
             "jaulas": [j for j in jaulas if j],
         })
     df = pd.DataFrame(filas)
+    motivos = {}
     malos = df["inicio"].isna() | df["centro_id"].isna()
-    cob.registrar("eventos_sanitarios", len(df), {"sin fecha de inicio o centro": int(malos.sum())} if malos.sum() else {})
+    if malos.sum():
+        motivos["sin fecha de inicio o centro"] = int(malos.sum())
+    if centros_validos is not None:
+        ajenos = ~malos & ~df["centro_id"].isin(centros_validos)
+        if ajenos.sum():
+            motivos["centro que no existe en la base de operaciones"] = int(ajenos.sum())
+        malos = malos | ajenos
+    cob.registrar("eventos_sanitarios", len(df), motivos)
     df = df[~malos].copy()
     df["inicio"] = pd.to_datetime(df["inicio"])
     df["fin"] = pd.to_datetime(df["fin"])
@@ -200,6 +233,21 @@ def leer_dolar(anios: list[int], cob: Cobertura) -> tuple[pd.DataFrame, str]:
     return df[~malos][["fecha", "valor"]], " + ".join(sorted(origenes))
 
 
+def descargar_caso(carpeta: Path) -> list[str]:
+    """Baja del repositorio del curso los archivos que falten en `carpeta`."""
+    carpeta.mkdir(parents=True, exist_ok=True)
+    bajados = []
+    for nombre in ARCHIVOS_CASO:
+        destino = carpeta / nombre
+        if destino.exists():
+            continue
+        r = requests.get(f"{REPO_CURSO}/{nombre}", timeout=60)
+        r.raise_for_status()
+        destino.write_bytes(r.content)
+        bajados.append(nombre)
+    return bajados
+
+
 def cargar(carpeta: Path = DATOS) -> Fuentes:
     cob = Cobertura()
     tablas = leer_sqlite(_archivo(carpeta, "*.sqlite"))
@@ -213,7 +261,7 @@ def cargar(carpeta: Path = DATOS) -> Fuentes:
     operacion = limpiar_operacion(tablas["operacion_diaria"], jaulas, cob)
     cosechas = limpiar_cosechas(tablas["cosechas"], lotes, cob)
     precios = leer_precios(_archivo(carpeta, "*.csv"), cob)
-    eventos = leer_eventos(_archivo(carpeta, "*.json"), cob)
+    eventos = leer_eventos(_archivo(carpeta, "*.json"), cob, set(centros["centro_id"]))
     anios = sorted({*operacion["fecha"].dt.year.unique(), *[p.year for p in precios["mes"]]})
     dolar, origen = leer_dolar([int(a) for a in anios], cob)
     return Fuentes(centros, jaulas, lotes, operacion, cosechas, precios, eventos, dolar, cob, origen)

@@ -49,7 +49,9 @@ def crear(carpeta: Path, semilla: int = 3) -> dict:
                 f_txt = fecha.isoformat()
             else:
                 f_txt = fecha.strftime("%d/%m/%Y")
-            filas.append((f_txt, c, j, f"L{j[1:]}", "E1", _num_chileno(alimento), muertos,
+            # un día con la mortalidad mal digitada (dos ceros de más); la población usa la real
+            muertos_reg = muertos * 100 + 12_000 if (j == "J32" and d == 30) else muertos
+            filas.append((f_txt, c, j, f"L{j[1:]}", "E1", _num_chileno(alimento), muertos_reg,
                           _num_chileno(poblacion, 0), _num_chileno(biomasa), _num_chileno(crecimiento),
                           "7,6", "Z1", fecha.month))
     # basura que tiene que quedar fuera de la cobertura
@@ -93,7 +95,7 @@ def crear(carpeta: Path, semilla: int = 3) -> dict:
          "fecha_fin": None, "mortalidad_asociada": 300, "tratamiento": "baño", "jaulas_afectadas": []},
     ]}
     (carpeta / "origen_eventos_sanitarios.json").write_text(json.dumps(eventos, ensure_ascii=False), encoding="utf-8")
-    return {"filas_operacion": len(filas), "filas_basura": 3}
+    return {"filas_operacion": len(filas), "filas_basura": 3, "mortalidad_mal_digitada": 1}
 
 
 def dolar_falso(anio: int) -> list[dict]:

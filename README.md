@@ -8,7 +8,7 @@ Lee las cuatro fuentes del caso (SQLite, CSV, JSON y la API de mindicador.cl), l
 
 ## Cómo reproducirlo
 
-Requisitos: Python 3.11 o superior y conexión a internet (para mindicador.cl). No hace falta Java ni Spark.
+Requisitos: Python 3.11 o superior y conexión a internet (para bajar los datos del caso y consultar mindicador.cl). No hace falta Java ni Spark.
 
 ```bash
 git clone <url de este repositorio>
@@ -18,15 +18,13 @@ source .venv/bin/activate          # en Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Copia los tres archivos del caso (set `grupo_s3`) en `data/raw/`:
+Los datos del caso **no están en este repositorio**: el comando los baja solo, la primera vez, desde el repositorio público del curso (`LMD18/IIC3752-2026-2-Proyecto-Semestral`, carpeta `casos/salmonera/grupo_3`, fijo en el commit `67055a6`) a `data/raw/`. Si prefieres copiarlos a mano, déjalos ahí con estos nombres:
 
 ```
 data/raw/origen_acuicultura.sqlite
 data/raw/origen_costos_alimento.csv
 data/raw/origen_eventos_sanitarios.json
 ```
-
-Los datos del caso **no están en el repositorio**: son de la empresa, y la regla del curso prohíbe subirlos a servicios externos.
 
 Luego, un solo comando:
 
@@ -45,6 +43,7 @@ python -m salmonera
 | `descomposicion_centro_caro.csv` | Cuánto de la diferencia de costo (centro caro vs. el resto) aporta cada factor, en CLP/kg y en % |
 | `sensibilidad_definiciones.csv` | El resultado bajo la definición principal y bajo cada alternativa (decisiones 2 a 7 del plan) |
 | `conciliacion_eventos.csv` | Mortalidad declarada por sanidad vs. la que suma la operación diaria en la ventana de cada evento |
+| `conciliacion_cosechas.csv` | Cada cosecha frente a la biomasa registrada ese día y cuántos días sigue el registro después |
 | `mortalidad_basal.csv` | Tasa diaria normal usada como línea base |
 | `cobertura.csv` | Registros excluidos de cada fuente y por qué |
 | `hechos_jaula_dia.csv` | La tabla de hechos completa (una fila es una jaula en un día) |
@@ -60,7 +59,7 @@ FCR económico = alimento (kg) ÷ biomasa ganada                         → lo 
 Costo por kg  = precio × FCR biológico × (1 + biomasa muerta ÷ biomasa ganada)
 ```
 
-- **Biomasa ganada** (por jaula y lote): biomasa final − biomasa inicial + kilos vivos cosechados.
+- **Crecimiento bruto**: Σ `crecimiento_kg` de la operación diaria (incluye a los peces que después mueren). **Biomasa ganada neta** = crecimiento bruto − biomasa muerta.
 - **Biomasa muerta**: peces muertos × peso promedio de la jaula (biomasa ÷ población).
 - **Exceso por evento**: mortalidad sobre la basal en los días de la ventana de un evento sanitario.
 - **Descomposición**: como el costo es un producto de factores, su logaritmo es una suma, y la diferencia entre el centro caro y el resto se reparte entre precio, FCR, mortalidad basal y mortalidad por evento, sin residuo.

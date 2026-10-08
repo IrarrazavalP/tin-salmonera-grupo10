@@ -144,6 +144,12 @@ class Cobertura:
     """Cuántos registros entran y cuántos quedan fuera de cada fuente, y por qué."""
 
     filas: list[dict] = field(default_factory=list)
+    correcciones: list[dict] = field(default_factory=list)
+
+    def corregir(self, fuente: str, motivo: str, n: int) -> None:
+        """Registros que se corrigen (no se excluyen): se informan aparte."""
+        if n:
+            self.correcciones.append({"fuente": fuente, "motivo": motivo, "registros": n})
 
     def registrar(self, fuente: str, total: int, motivos: dict[str, int]) -> None:
         excluidos = sum(motivos.values())
@@ -156,6 +162,10 @@ class Cobertura:
                 filas.append({"fuente": f["fuente"], "motivo": "—", "registros": 0, "total": f["total"]})
             for motivo, n in f["motivos"].items():
                 filas.append({"fuente": f["fuente"], "motivo": motivo, "registros": n, "total": f["total"]})
+        for c in self.correcciones:
+            total = next((f["total"] for f in self.filas if f["fuente"] == c["fuente"]), 0)
+            filas.append({"fuente": c["fuente"], "motivo": f"corregido (no excluido): {c['motivo']}",
+                          "registros": c["registros"], "total": total})
         tabla = pd.DataFrame(filas)
         if not tabla.empty:
             tabla["porcentaje"] = (100 * tabla["registros"] / tabla["total"].where(tabla["total"] > 0)).round(2)

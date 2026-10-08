@@ -29,6 +29,7 @@ class Resultado:
     por_centro: pd.DataFrame
     basal: pd.DataFrame
     conciliacion: pd.DataFrame
+    cosechas: pd.DataFrame
     descomposicion: pd.DataFrame
     centro_caro: str
     resumen: dict
@@ -163,30 +164,45 @@ def conciliar(h: pd.DataFrame, f: Fuentes, ventanas: pd.DataFrame) -> pd.DataFra
 
 
 # ----------------------------------------------------------- biomasa ganada
-def biomasa_ganada(h: pd.DataFrame, f: Fuentes) -> pd.DataFrame:
-    """Ganancia neta por jaula y lote: biomasa final − inicial + lo cosechado.
+def biomasa_ganada(h: pd.DataFrame, f: Fuentes, d: Decisiones) -> pd.DataFrame:
+    """Crecimiento bruto y biomasa ganada neta por jaula.
 
-    Si el lote se cosechó en o después de su último registro, ese registro todavía
-    incluye a los peces cosechados: la biomasa que queda es la última menos lo
-    cosechado (nunca negativa), para no contarlos dos veces.
+    `crecimiento_kg` es bruto: en el registro, biomasa de hoy − biomasa de ayer
+    + peso de los muertos = crecimiento (calza en el 99 % de los días). Por eso:
+        crecimiento bruto = Σ crecimiento_kg          → denominador del FCR biológico
+        ganada neta       = crecimiento bruto − muerta → denominador del FCR económico
+    La alternativa "balance" usa biomasa final − inicial como ganada neta.
+    Las cosechas no se suman: el registro diario no las descuenta (ver conciliación).
     """
-    h = h.copy()
-    h["lote_id"] = h["lote_id"].fillna("sin lote")
-    cosecha = f.cosechas.groupby("lote_id").agg(cosechado_kg=("kilos_vivos", "sum"), fecha_cosecha=("fecha", "max"))
-    g = h.groupby(["centro_id", "jaula_id", "lote_id"]).agg(
+    g = h.groupby(["centro_id", "jaula_id"]).agg(
         biomasa_inicial_kg=("biomasa_kg", "first"),
         biomasa_ultima_kg=("biomasa_kg", "last"),
-        ultimo_registro=("fecha", "max"),
         crecimiento_registrado_kg=("crecimiento_kg", "sum"),
+        muerta_kg=("muerta_kg", "sum"),
     ).reset_index()
-    g = g.join(cosecha, on="lote_id")
-    g["cosechado_kg"] = g["cosechado_kg"].fillna(0.0)
-    cosechado_al_final = g["fecha_cosecha"].notna() & (g["fecha_cosecha"] >= g["ultimo_registro"])
-    g["biomasa_final_kg"] = np.where(
-        cosechado_al_final, (g["biomasa_ultima_kg"] - g["cosechado_kg"]).clip(lower=0), g["biomasa_ultima_kg"]
-    )
-    g["ganada_kg"] = g["biomasa_final_kg"] - g["biomasa_inicial_kg"] + g["cosechado_kg"]
-    return g
+    if d.ganancia == "balance":
+        g["ganada_kg"] = g["biomasa_ultima_kg"] - g["biomasa_inicial_kg"]
+    else:
+        g["ganada_kg"] = g["crecimiento_registrado_kg"] - g["muerta_kg"]
+    return g.drop(columns=["muerta_kg"])
+
+
+def conciliar_cosechas(f: Fuentes) -> pd.DataFrame:
+    """Cuarta tabla de la base: cada cosecha frente al registro diario de su jaula."""
+    h = f.operacion
+    filas = []
+    for c in f.cosechas.itertuples():
+        s = h[h["jaula_id"] == c.jaula_id]
+        dia = s[s["fecha"] <= c.fecha].tail(1)
+        filas.append({
+            "lote_id": c.lote_id,
+            "jaula_id": c.jaula_id,
+            "fecha_cosecha": c.fecha.date(),
+            "kilos_vivos": c.kilos_vivos,
+            "biomasa_registrada_ese_dia_kg": float(dia["biomasa_kg"].iloc[0]) if len(dia) else np.nan,
+            "dias_de_registro_despues": int((s["fecha"] > c.fecha).sum()),
+        })
+    return pd.DataFrame(filas)
 
 
 # ------------------------------------------------------------ por centro
@@ -261,12 +277,20 @@ def descomponer(c: pd.DataFrame, caro: str) -> pd.DataFrame:
     return pd.DataFrame(filas)
 
 
+def cortar_post_cosecha(h: pd.DataFrame, f: Fuentes) -> pd.DataFrame:
+    cosecha = f.cosechas.groupby("jaula_id")["fecha"].min()
+    limite = h["jaula_id"].map(cosecha)
+    return h[limite.isna() | (h["fecha"] <= limite)].copy()
+
+
 def calcular(f: Fuentes, d: Decisiones) -> Resultado:
     h = tabla_jaula_dia(f, d)
+    if d.post_cosecha == "cortar":
+        h = cortar_post_cosecha(h, f)
     h, ventanas = marcar_eventos(h, f, d)
     basal = mortalidad_basal(h, d)
     h = exceso_por_evento(h, basal, d)
-    ganancia = biomasa_ganada(h, f)
+    ganancia = biomasa_ganada(h, f, d)
     c = por_centro(h, ganancia, f, d)
     validos = c[c["ganada_kg"] > 0]
     caro = validos["costo_clp_por_kg"].idxmax()
@@ -287,4 +311,4 @@ def calcular(f: Fuentes, d: Decisiones) -> Resultado:
         "costo_mortalidad_evento_clp_centro": round(float(fila["costo_mortalidad_evento_clp"])),
         "costo_mortalidad_evento_clp_total": round(float(c["costo_mortalidad_evento_clp"].sum())),
     }
-    return Resultado(d, h, c, basal, conciliar(h, f, ventanas), desc, caro, resumen)
+    return Resultado(d, h, c, basal, conciliar(h, f, ventanas), conciliar_cosechas(f), desc, caro, resumen)

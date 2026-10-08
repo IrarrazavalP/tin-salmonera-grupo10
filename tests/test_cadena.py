@@ -117,3 +117,20 @@ def test_sin_api_usa_la_copia_local(datos, monkeypatch):
     monkeypatch.setattr(fuentes.requests, "get", caida)
     f = fuentes.cargar(carpeta / "raw")
     assert "copia local" in f.origen_dolar
+
+
+def test_corrige_la_mortalidad_mal_digitada(datos):
+    carpeta, info = datos
+    f = fuentes.cargar(carpeta / "raw")
+    assert int(f.operacion["mortalidad_corregida"].sum()) == info["mortalidad_mal_digitada"]
+    assert f.operacion["mortalidad_n"].max() < 1000
+    tabla = f.cobertura.tabla()
+    assert tabla["motivo"].str.startswith("corregido").sum() == 1
+
+
+def test_las_cosechas_entran_a_la_conciliacion(datos):
+    from salmonera.metrica import calcular
+
+    carpeta, _ = datos
+    r = calcular(fuentes.cargar(carpeta / "raw"), PRINCIPAL)
+    assert len(r.cosechas) == 1 and r.cosechas["jaula_id"].iloc[0] == "J31"

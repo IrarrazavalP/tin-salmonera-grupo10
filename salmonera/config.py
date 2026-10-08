@@ -15,6 +15,14 @@ DATOS = RAIZ / "data" / "raw"
 CACHE = RAIZ / "data" / "cache"
 RESULTADOS = RAIZ / "results"
 
+# Los datos del caso se bajan del repositorio público del curso, fijos en un commit,
+# para que la cadena corra de cero sin que nadie copie archivos a mano.
+REPO_CURSO = (
+    "https://raw.githubusercontent.com/LMD18/IIC3752-2026-2-Proyecto-Semestral/"
+    "67055a654411024686e2ca47bb622108b20116d0/casos/salmonera/grupo_3"
+)
+ARCHIVOS_CASO = ("origen_acuicultura.sqlite", "origen_costos_alimento.csv", "origen_eventos_sanitarios.json")
+
 FUENTE_PIE = (
     "Fuente: origen_acuicultura.sqlite, origen_costos_alimento.csv, "
     "origen_eventos_sanitarios.json y mindicador.cl. Cálculo: Grupo 10."
@@ -43,6 +51,12 @@ class Decisiones:
     # 7. Mortalidad del evento: "diaria" (exceso sobre la basal en la operación
     #    diaria) o "sanidad" (la mortalidad declarada por evento).
     mortalidad: str = "diaria"
+    # 8. Biomasa ganada: "crecimiento" (Σ crecimiento_kg, que es bruto: incluye a
+    #    los peces que después mueren) o "balance" (biomasa final − inicial).
+    ganancia: str = "crecimiento"
+    # 9. Días posteriores a la cosecha de la jaula: "incluir" (el registro diario
+    #    sigue y no refleja la cosecha) o "cortar" (sólo hasta la fecha de cosecha).
+    post_cosecha: str = "incluir"
 
 
 PRINCIPAL = Decisiones()
@@ -55,4 +69,6 @@ ALTERNATIVAS: dict[str, Decisiones] = {
     "5 · ventana desde la fecha declarada": replace(PRINCIPAL, ventana_previa_dias=0),
     "6 · excluir eventos sin jaulas": replace(PRINCIPAL, sin_jaulas="excluir"),
     "7 · mortalidad declarada por sanidad": replace(PRINCIPAL, mortalidad="sanidad"),
+    "8 · ganancia por balance de biomasa": replace(PRINCIPAL, ganancia="balance"),
+    "9 · cortar cada jaula en su cosecha": replace(PRINCIPAL, post_cosecha="cortar"),
 }

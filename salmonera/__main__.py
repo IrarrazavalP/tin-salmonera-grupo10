@@ -11,7 +11,7 @@ import pandas as pd
 
 from . import graficos
 from .config import ALTERNATIVAS, DATOS, PRINCIPAL, RESULTADOS
-from .fuentes import cargar
+from .fuentes import cargar, descargar_caso
 from .metrica import calcular
 
 
@@ -20,6 +20,10 @@ def correr(datos: Path = DATOS, salida: Path = RESULTADOS) -> dict:
     salida.mkdir(parents=True, exist_ok=True)
     (salida / "figuras").mkdir(exist_ok=True)
 
+    if datos == DATOS:
+        bajados = descargar_caso(datos)
+        if bajados:
+            print(f"0/4 Bajé del repositorio del curso: {', '.join(bajados)}")
     print("1/4 Leyendo las cuatro fuentes…")
     f = cargar(datos)
     print(f"    dólar: {f.origen_dolar}")
@@ -40,6 +44,7 @@ def correr(datos: Path = DATOS, salida: Path = RESULTADOS) -> dict:
     r.descomposicion.round(4).to_csv(salida / "descomposicion_centro_caro.csv", index=False)
     r.basal.to_csv(salida / "mortalidad_basal.csv", index=False)
     r.conciliacion.to_csv(salida / "conciliacion_eventos.csv", index=False)
+    r.cosechas.to_csv(salida / "conciliacion_cosechas.csv", index=False)
     sens.to_csv(salida / "sensibilidad_definiciones.csv", index=False)
     cobertura.to_csv(salida / "cobertura.csv", index=False)
     r.hechos.drop(columns=["mes"]).to_csv(salida / "hechos_jaula_dia.csv", index=False)
