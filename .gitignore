@@ -1,16 +1,16 @@
 # Datos del caso: son de la empresa y no se suben (regla del curso)
-data/raw/*
-!data/raw/.gitkeep
-data/cache/
+data/*
+!data/.gitkeep
 *.sqlite
 *.db
 origen_*.csv
 origen_*.json
-# Resultados: se regeneran con `python -m salmonera`
-results/
-# Python
+# Gráficos: se regeneran al correr entrega1_martin.ipynb
+figuras/
+# Python y Jupyter
 .venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+.ipynb_checkpoints/
 .DS_Store
