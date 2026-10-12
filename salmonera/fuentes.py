@@ -214,7 +214,12 @@ def leer_dolar(anios: list[int], cob: Cobertura) -> tuple[pd.DataFrame, str]:
     for anio in anios:
         copia = CACHE / f"dolar_{anio}.json"
         try:
-            r = requests.get(f"https://mindicador.cl/api/dolar/{anio}", timeout=30)
+            r = requests.get(
+                f"https://mindicador.cl/api/dolar/{anio}", 
+                headers={'User-Agent': 'Mozilla/5.0'}, 
+                timeout=30, 
+                verify=False
+            )
             r.raise_for_status()
             serie = r.json()["serie"]
             copia.write_text(json.dumps(serie), encoding="utf-8")
