@@ -5,8 +5,6 @@ data/*
 *.db
 origen_*.csv
 origen_*.json
-# Gráficos: se regeneran al correr entrega1_martin.ipynb
-figuras/
 # Python y Jupyter
 .venv/
 __pycache__/
