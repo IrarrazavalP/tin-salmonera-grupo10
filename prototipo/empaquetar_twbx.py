@@ -1,4 +1,4 @@
-"""Arma PrototipoFinal.twbx a partir de PrototipoFinal-vivo.twb y las tablas de datos/.
+"""Arma PrototipoFinal.twbx (en la raíz del repositorio) a partir de PrototipoFinal-vivo.twb y las tablas de datos/.
 
 Uso (desde la raíz del repositorio o desde prototipo/):
     python3 prototipo/empaquetar_twbx.py

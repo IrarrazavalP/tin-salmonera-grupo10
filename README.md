@@ -13,7 +13,8 @@ Se integran las cuatro fuentes del caso (SQLite, CSV, JSON y la API de mindicado
 | `entrega2.ipynb` | **Cadena de la Entrega 2**, por capas (cruda → depurada → modelo → consumo), con pruebas de calidad en cada corrida |
 | `calidad.py` | Pruebas de calidad que usa `entrega2.ipynb` (qué verifica, qué hace si falla: avisa o bloquea) |
 | `entrega1.ipynb` | Cadena de la Entrega 1, tal como se entregó (no se modifica) |
-| `prototipo/` | Prototipo en Tableau (`PrototipoFinal.twbx`) y sus tablas `datos/`, que escribe `entrega2.ipynb`; ver `prototipo/README.md` |
+| `PrototipoFinal.twbx` | **Prototipo en Tableau, empaquetado** (con su copia de las tablas): se abre sin más, en cualquier computador |
+| `prototipo/` | Versión en vivo del prototipo (`PrototipoFinal-vivo.twb`) y sus tablas `datos/`, que escribe `entrega2.ipynb`; ver `prototipo/README.md` |
 | `figuras/` | Las 5 visualizaciones del informe |
 | `docs/` | Ficha de la métrica, hallazgos, bitácora de supuestos, evidencia y recomendaciones, declaración de uso de IA |
 | `requirements.txt` | Versiones con las que se reproducen las cifras (Python 3.11) |
@@ -62,6 +63,6 @@ Las diferencias entre el centro más caro y el resto se reparten entre las tres 
 
 ## Prototipo
 
-`prototipo/PrototipoFinal.twbx` (Tableau Desktop 2025.2 o superior, solo local: no publicar en Tableau Public / Cloud). `PrototipoFinal.twbx` es el libro empaquetado (con su copia de las tablas): se abre sin más, en cualquier computador. `PrototipoFinal-vivo.twb` lee en vivo `prototipo/datos/`, que escribe `entrega2.ipynb` en la misma corrida. Detalle y cómo actualizar: `prototipo/README.md`.
+`PrototipoFinal.twbx` (Tableau Desktop 2025.2 o superior, solo local: no publicar en Tableau Public / Cloud). `PrototipoFinal.twbx` (en la raíz) es el libro empaquetado (con su copia de las tablas): se abre sin más, en cualquier computador. `PrototipoFinal-vivo.twb` lee en vivo `prototipo/datos/`, que escribe `entrega2.ipynb` en la misma corrida. Detalle y cómo actualizar: `prototipo/README.md`.
 
 > Nota: algunos documentos de `docs/` (`hallazgos.md`, `revision_notebook_martin.md`) son de la Entrega 1 y mencionan el comando `python -m salmonera`, que ya no existe; la cadena vigente es `entrega2.ipynb`.
