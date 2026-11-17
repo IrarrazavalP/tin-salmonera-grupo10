@@ -324,3 +324,35 @@ def prueba_salidas(reg, cifras, carpeta):
         dif = max(abs(a - b) for a, b in pares)
         return dif < 1e-6, f"diferencia máxima {dif:.1e} (cifras.json redondea a 6 decimales)"
     reg.registrar("M-08", "métrica", "consumo", "cifras.json y las tablas de results/ muestran el mismo número", BLOQUEA, "dif < 1e-6", m08)
+
+
+def prueba_prototipo(reg, cifras, carpeta):
+    """M-12: las tablas que lee el tablero (prototipo/datos/) muestran el mismo número que cifras.json, que es lo que
+    cita el informe. Se evalúa sobre los archivos ya escritos en la carpeta de preparación, antes de reemplazar
+    prototipo/datos/. Si falla, el tablero conserva la versión anterior (results/ ya quedó publicado y es válido)."""
+    def m12():
+        carpeta_ = Path(carpeta)
+        meta = pd.read_csv(carpeta_ / "meta.csv").iloc[0]
+        brecha = pd.read_csv(carpeta_ / "escenarios_brecha.csv")
+        principal = brecha[brecha["escenario"] == "Principal"].set_index("orden_parte")
+        rangos = cifras["rango_entre_definiciones"]
+        pares = {
+            "centro más caro": (cifras["centro_mas_caro"]["id"], meta["centro_caro_id"]),
+            "R centro": (cifras["R"]["centro"], meta["R_centro_caro"]),
+            "R resto": (cifras["R"]["resto"], meta["R_resto"]),
+            "brecha R": (cifras["R"]["brecha"], meta["brecha_R"]),
+            "sobrecosto total": (cifras["sobrecosto_mm_clp"]["total"], meta["sobrecosto_mm_clp"]),
+            "cobertura %": (cifras["cobertura"]["pct_excluidos"], meta["cobertura_pct_excluido"]),
+            "R mínimo": (rangos["R_centro"]["min"], meta["R_min_alternativas"]),
+            "R máximo": (rangos["R_centro"]["max"], meta["R_max_alternativas"]),
+            "sobrecosto mínimo": (rangos["sobrecosto_total_mm_clp"]["min"], meta["sobrecosto_min_mm_clp"]),
+            "sobrecosto máximo": (rangos["sobrecosto_total_mm_clp"]["max"], meta["sobrecosto_max_mm_clp"]),
+        }
+        for orden, parte in enumerate(["cosecha", "evento", "basal"], start=1):
+            pares[f"aporte {parte}"] = (cifras["aporte_brecha_pct"][parte], principal.loc[orden, "aporte_pct"])
+            pares[f"sobrecosto {parte}"] = (cifras["sobrecosto_mm_clp"][parte], principal.loc[orden, "sobrecosto_mm_clp"])
+        dif = {k: abs(float(a) - float(b)) for k, (a, b) in pares.items()}
+        peor = max(dif, key=dif.get)
+        return dif[peor] < 1e-6, f"{len(pares)} cifras comparadas; diferencia máxima {dif[peor]:.1e} ({peor})"
+    reg.registrar("M-12", "métrica", "prototipo", "El tablero (prototipo/datos/) muestra el mismo número que cifras.json; "
+                  "si falla, no se actualiza el prototipo", BLOQUEA, "dif < 1e-6", m12)

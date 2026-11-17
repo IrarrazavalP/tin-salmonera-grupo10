@@ -13,7 +13,8 @@ import zipfile
 from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
-VIVO, DATOS, SALIDA = AQUI / "PrototipoFinal-vivo.twb", AQUI / "datos", AQUI / "PrototipoFinal.twbx"
+VIVO, DATOS = AQUI / "PrototipoFinal-vivo.twb", AQUI / "datos"
+SALIDA = AQUI.parent / "PrototipoFinal.twbx"     # en la raíz del repositorio, como dicen los README
 
 texto = VIVO.read_text(encoding="utf-8")
 rutas = set(re.findall(r"directory='([^']*/datos)'", texto))

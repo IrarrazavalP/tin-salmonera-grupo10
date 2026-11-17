@@ -11,17 +11,18 @@ Se integran las cuatro fuentes del caso (SQLite, CSV, JSON y la API de mindicado
 | Ruta | Qué es |
 |---|---|
 | `entrega2.ipynb` | **Cadena de la Entrega 2**, por capas (cruda → depurada → modelo → consumo), con pruebas de calidad en cada corrida |
-| `calidad.py` | Pruebas de calidad que usa `entrega2.ipynb` (qué verifica, qué hace si falla: avisa o bloquea) |
+| `calidad.py` | Las 34 pruebas de calidad que corre `entrega2.ipynb` (qué verifica cada una y si avisa o bloquea) |
 | `entrega1.ipynb` | Cadena de la Entrega 1, tal como se entregó (no se modifica) |
-| `PrototipoFinal.twbx` | **Prototipo en Tableau, empaquetado** (con su copia de las tablas): se abre sin más, en cualquier computador |
-| `prototipo/` | Versión en vivo del prototipo (`PrototipoFinal-vivo.twb`) y sus tablas `datos/`, que escribe `entrega2.ipynb`; ver `prototipo/README.md` |
-| `figuras/` | Las 5 visualizaciones del informe |
+| `PrototipoFinal.twbx` | **Prototipo en Tableau, empaquetado** (con su copia de las tablas): se abre sin más, en cualquier computador con Tableau Desktop |
+| `prototipo/` | Versión en vivo del prototipo (`PrototipoFinal-vivo.twb`), el script que arma el `.twbx` y la carpeta `datos/` que escribe `entrega2.ipynb`; ver `prototipo/README.md` |
+| `figuras/` | Las 5 visualizaciones del informe (las regenera cada corrida) |
+| `data/` | Aquí van los 3 archivos del caso (no se suben) y `data/cache/`, la copia guardada del dólar |
 | `docs/` | Ficha de la métrica, hallazgos, bitácora de supuestos, evidencia y recomendaciones, declaración de uso de IA |
 | `requirements.txt` | Versiones con las que se reproducen las cifras (Python 3.11) |
 
 ## Cómo reproducirlo
 
-Requisitos: Python 3.11 o superior e internet (consulta a mindicador.cl; si falla se usa la copia de `data/cache/`).
+Requisitos: Python 3.11 o superior e internet (consulta a mindicador.cl; si falla, se usa la copia de `data/cache/`).
 
 ```bash
 git clone <url de este repositorio>
@@ -45,9 +46,55 @@ Un solo comando, desde la raíz del repositorio:
 jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=900 entrega2.ipynb
 ```
 
-**Cuánto demora:** unos minutos como máximo (timeout 900 s), más la consulta a la API.
+**Cuánto demora:** unos 20 s en total (18 s medidos el 17-11-2026; el cálculo en sí son 11 s). Si la API del dólar no responde, cada año consultado puede sumar hasta 20 s de espera antes de pasar a la copia guardada.
 
-**Qué se espera:** se escriben `results/`, `figuras/` y las tablas del prototipo en `prototipo/datos/` **solo si pasan las pruebas que bloquean**; `results/calidad.csv` y `results/estado_corrida.json` dicen qué pasó. Si una prueba solo avisa, la corrida sigue y queda registrada. Si la API del dólar falla, se usa la última copia guardada o se declara "sin dato".
+### Qué deja la corrida
+
+| Dónde | Qué | Cuándo se escribe |
+|---|---|---|
+| `results/` (17 archivos) | `cifras.json` (las cifras que cita el informe, incluida la cifra de referencia con su rango entre las 10 definiciones), 14 tablas (por centro, especie, lote, brecha, alternativas, sensibilidad, eventos, cobertura, hechos jaula-día…), `calidad.csv` y `estado_corrida.json` | Solo si pasan todas las pruebas que bloquean |
+| `figuras/` | Las 5 figuras del informe | Junto con `results/` |
+| `prototipo/datos/` (10 tablas) | Lo que lee el tablero de Tableau | Después de `results/`, y solo si pasa la prueba M-12 |
+| `entrega2.ipynb` | El mismo notebook con las salidas de esta corrida (`--inplace`) | Siempre |
+
+`results/` y `prototipo/datos/` no se suben al repositorio: se generan con el comando.
+
+### Cómo saber si salió bien
+
+1. El comando termina sin error y la última celda dice `Pruebas de la corrida: … 0 fallas`.
+2. `results/estado_corrida.json` dice `"resultado": "publicada"` y `"prototipo": {"actualizado_en_esta_corrida": true, …}`.
+3. `results/cifras.json` reproduce las cifras del informe:
+
+| Cifra | Valor esperado |
+|---|---|
+| Centro más caro | 1 (Reloncaví) |
+| R centro / R resto / brecha | 1,745 / 1,238 / 0,507 kg/kg |
+| Aporte a la brecha (eficiencia / evento / basal) | 54,4 / 39,4 / 6,2 % |
+| Sobrecosto | CLP 403 + 282 + 44 = 729 MM |
+| Cobertura | 1,48 % de los registros jaula-día excluido (207 de 13.978) |
+
+La prueba M-10 avisa sola si alguna de estas cifras se aleja de la Entrega 1.
+
+## Pruebas de calidad
+
+Corren en cada ejecución, sobre los datos reales, y dejan su resultado en `results/calidad.csv`:
+
+- **13 por fuente (F-01 a F-13):** el SQLite, el CSV y el JSON existen y tienen la forma esperada; fechas y números legibles; precios para cada mes; eventos dentro del período; respuesta válida de la API.
+- **9 de la tabla de hechos (H-01 a H-09):** una fila por (lote, fecha), sin huérfanos, una cosecha por lote, rangos válidos, fechas dentro del período, precio para cada jaula-día.
+- **12 de la métrica y las salidas (M-01 a M-12):** las tres partes suman R y el 100 %, la brecha y los pesos se reparten sin residuo, no se pierden registros, cobertura y completitud, cifras iguales a la E1, y lo que leen el informe (M-08) y el tablero (M-12) es el mismo número.
+
+Cada prueba **bloquea** o **avisa**:
+
+- **Bloquea:** la corrida se detiene y `results/` conserva la última versión publicada; `estado_corrida.json` dice `"bloqueada"` y en qué etapa. Si la que falla es M-12, `results/` ya está publicado pero `prototipo/datos/` conserva la versión anterior, y `estado_corrida.json` lo registra.
+- **Avisa:** la corrida sigue y el aviso queda registrado. Hoy el único aviso esperable es F-13 cuando mindicador.cl no responde.
+
+## Arquitectura (cómo está implementada)
+
+- **Capas:** cruda (`data/`, los archivos del caso sin modificar y la copia de la API en `data/cache/`) → depurada y modelo (en memoria, dentro del notebook) → consumo (`results/`, `figuras/`, `prototipo/datos/`).
+- **Se transforma después de cargar (ELT):** los archivos de origen nunca se modifican; toda limpieza y corrección se hace en el notebook y queda contada en `results/cobertura.csv`.
+- **Carga completa en cada corrida:** se recalcula todo desde los archivos de origen y se reemplazan las salidas. Dos corridas seguidas dan el mismo `cifras.json` y la misma tabla de hechos; en cada corrida se verifica que no haya filas duplicadas (H-01) ni registros perdidos (M-09).
+- **Si la API del dólar falla:** se usa la última copia guardada en `data/cache/`. Si no hay copia, las cifras en kg y CLP salen completas, las de USD dicen «no disponible» y el pie del prototipo lo declara.
+- **Acuerdo de servicio** (se mide en cada corrida y queda en `estado_corrida.json`): frescura mensual, a más tardar 15 días después del cierre de mes; completitud ≥ 98 % de los registros jaula-día; 100 % de las pruebas que bloquean y ≥ 95 % del total en verde. Dueño: Gerente de Producción; corre la cadena: Analista de control de gestión (cargos propuestos por el grupo).
 
 ## La métrica
 
@@ -63,6 +110,11 @@ Las diferencias entre el centro más caro y el resto se reparten entre las tres 
 
 ## Prototipo
 
-`PrototipoFinal.twbx` (Tableau Desktop 2025.2 o superior, solo local: no publicar en Tableau Public / Cloud). `PrototipoFinal.twbx` (en la raíz) es el libro empaquetado (con su copia de las tablas): se abre sin más, en cualquier computador. `PrototipoFinal-vivo.twb` lee en vivo `prototipo/datos/`, que escribe `entrega2.ipynb` en la misma corrida. Detalle y cómo actualizar: `prototipo/README.md`.
+Requiere **Tableau Desktop 2025.2 o superior**, solo local: no publicar en Tableau Public, Cloud ni Server (los datos son de la empresa). Sin Tableau Desktop: el informe trae pantallazos de las dos pantallas (*Screen* y *Definition*).
+
+- `PrototipoFinal.twbx` (en la raíz) es el libro empaquetado, con su propia copia de las tablas: se abre sin más, en cualquier computador. Es una foto de la corrida con la que se empaquetó.
+- `prototipo/PrototipoFinal-vivo.twb` lee en vivo `prototipo/datos/`, que escribe `entrega2.ipynb` en la misma corrida.
+
+Cómo abrirlo, actualizarlo y volver a empaquetarlo: `prototipo/README.md`.
 
 > Nota: algunos documentos de `docs/` (`hallazgos.md`, `revision_notebook_martin.md`) son de la Entrega 1 y mencionan el comando `python -m salmonera`, que ya no existe; la cadena vigente es `entrega2.ipynb`.
