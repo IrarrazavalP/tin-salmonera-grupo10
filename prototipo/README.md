@@ -6,12 +6,17 @@ con más costo se ataca con alimentación y cuál con sanidad, y cuánto vale ca
 ## Abrir
 Abrir `PrototipoFinal.twbx` (empaquetado) y pasar al dashboard **Screen**. Presentar: Dashboard → Presentation Mode.
 
-## Regenerar las tablas
+## Actualizar los datos
+Las tablas que lee el tablero (`prototipo/datos/*.csv`, no versionadas) las escribe `entrega2.ipynb` al final de
+cada corrida, solo si pasan las pruebas que bloquean:
+
 ```bash
-python3 prototipo/exportar_datos_tableau.py --repo .
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=900 entrega2.ipynb
 ```
-Escribe `prototipo/datos/*.csv` (no versionados: son datos derivados del caso). Tarda unos segundos.
-Si `mindicador.cl` no responde usa `data/cache/dolar.json`; sin caché el tablero muestra solo pesos y lo declara.
+
+Luego, en Tableau: Datos → Actualizar todos los orígenes (F5). El `.twbx` lleva su propia copia; para actualizarlo hay
+que volver a empaquetarlo (File → Export Packaged Workbook).
+`exportar_datos_tableau.py` es el script anterior (corre `entrega1.ipynb`); queda solo como referencia.
 
 ## Resultado esperado
 Centro Reloncaví, CLP 729 MM de sobrecosto; R = 1,74 vs 1,24; 54 % eficiencia (403 MM) /

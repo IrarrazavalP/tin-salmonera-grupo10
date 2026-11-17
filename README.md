@@ -13,7 +13,7 @@ Se integran las cuatro fuentes del caso (SQLite, CSV, JSON y la API de mindicado
 | `entrega2.ipynb` | **Cadena de la Entrega 2**, por capas (cruda → depurada → modelo → consumo), con pruebas de calidad en cada corrida |
 | `calidad.py` | Pruebas de calidad que usa `entrega2.ipynb` (qué verifica, qué hace si falla: avisa o bloquea) |
 | `entrega1.ipynb` | Cadena de la Entrega 1, tal como se entregó (no se modifica) |
-| `prototipo/` | Prototipo en Tableau (`PrototipoFinal.twbx`) y `exportar_datos_tableau.py`; ver `prototipo/README.md` |
+| `prototipo/` | Prototipo en Tableau (`PrototipoFinal.twbx`) y sus tablas `datos/`, que escribe `entrega2.ipynb`; ver `prototipo/README.md` |
 | `figuras/` | Las 5 visualizaciones del informe |
 | `docs/` | Ficha de la métrica, hallazgos, bitácora de supuestos, evidencia y recomendaciones, declaración de uso de IA |
 | `requirements.txt` | Versiones con las que se reproducen las cifras (Python 3.11) |
@@ -46,7 +46,7 @@ jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeou
 
 **Cuánto demora:** unos minutos como máximo (timeout 900 s), más la consulta a la API.
 
-**Qué se espera:** se escriben `results/` y `figuras/` **solo si pasan las pruebas que bloquean**; `results/calidad.csv` y `results/estado_corrida.json` dicen qué pasó. Si una prueba solo avisa, la corrida sigue y queda registrada. Si la API del dólar falla, se usa la última copia guardada o se declara "sin dato".
+**Qué se espera:** se escriben `results/`, `figuras/` y las tablas del prototipo en `prototipo/datos/` **solo si pasan las pruebas que bloquean**; `results/calidad.csv` y `results/estado_corrida.json` dicen qué pasó. Si una prueba solo avisa, la corrida sigue y queda registrada. Si la API del dólar falla, se usa la última copia guardada o se declara "sin dato".
 
 ## La métrica
 
@@ -62,6 +62,6 @@ Las diferencias entre el centro más caro y el resto se reparten entre las tres 
 
 ## Prototipo
 
-`prototipo/PrototipoFinal.twbx` (Tableau Desktop 2025.2 o superior, solo local: no publicar en Tableau Public / Cloud). Se abre sin más; para regenerar sus tablas: `python3 prototipo/exportar_datos_tableau.py --repo .` (ver `prototipo/README.md`).
+`prototipo/PrototipoFinal.twbx` (Tableau Desktop 2025.2 o superior, solo local: no publicar en Tableau Public / Cloud). Se abre sin más. Sus tablas (`prototipo/datos/`) las escribe `entrega2.ipynb` en la misma corrida; en Tableau basta F5 (ver `prototipo/README.md`).
 
 > Nota: algunos documentos de `docs/` (`hallazgos.md`, `revision_notebook_martin.md`) son de la Entrega 1 y mencionan el comando `python -m salmonera`, que ya no existe; la cadena vigente es `entrega2.ipynb`.
