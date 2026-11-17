@@ -348,6 +348,11 @@ def prueba_prototipo(reg, cifras, carpeta):
             "sobrecosto mínimo": (rangos["sobrecosto_total_mm_clp"]["min"], meta["sobrecosto_min_mm_clp"]),
             "sobrecosto máximo": (rangos["sobrecosto_total_mm_clp"]["max"], meta["sobrecosto_max_mm_clp"]),
         }
+        por_centro = pd.read_csv(carpeta_ / "escenarios_por_centro.csv")
+        fila_caro = por_centro[(por_centro["escenario"] == "Principal") & (por_centro["es_centro_caro"] == 1)].iloc[0]
+        pares["FCR bruto centro"] = (cifras["fcr_bruto_centro"], meta["fcr_bruto_centro_caro"])
+        pares["FCR bruto resto"] = (cifras["fcr_bruto_resto"], meta["fcr_bruto_resto"])
+        pares["FCR bruto centro (tabla por centro)"] = (cifras["fcr_bruto_centro"], fila_caro["R_bruto_gerencia"])
         for orden, parte in enumerate(["cosecha", "evento", "basal"], start=1):
             pares[f"aporte {parte}"] = (cifras["aporte_brecha_pct"][parte], principal.loc[orden, "aporte_pct"])
             pares[f"sobrecosto {parte}"] = (cifras["sobrecosto_mm_clp"][parte], principal.loc[orden, "sobrecosto_mm_clp"])
