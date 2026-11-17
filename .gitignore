@@ -11,4 +11,4 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ipynb_checkpoints/
-.DS_Store
+.DS_Storeprototipo/datos/
