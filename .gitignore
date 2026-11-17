@@ -1,6 +1,12 @@
 # Datos del caso: son de la empresa y no se suben (regla del curso)
 data/*
 !data/.gitkeep
+# Excepción: la copia guardada del dólar (dato público de mindicador.cl) es el plan B si la API falla
+!data/cache/
+data/cache/*
+!data/cache/dolar_*.json
+# Salidas de la cadena: se generan al correr el notebook (al repo solo van las figuras)
+results/
 *.sqlite
 *.db
 origen_*.csv

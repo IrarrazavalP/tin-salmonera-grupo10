@@ -1,0 +1,9 @@
+# Versiones con las que la cadena reproduce las cifras del informe (Python 3.11)
+pandas==3.0.2
+numpy==2.4.4
+matplotlib==3.9.2
+requests==2.31.0
+# Para ejecutar el notebook con un solo comando (jupyter nbconvert)
+nbconvert==7.16.2
+nbclient==0.9.0
+ipykernel==6.29.3
