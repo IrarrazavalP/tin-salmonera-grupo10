@@ -62,6 +62,6 @@ Las diferencias entre el centro más caro y el resto se reparten entre las tres 
 
 ## Prototipo
 
-`prototipo/PrototipoFinal.twbx` (Tableau Desktop 2025.2 o superior, solo local: no publicar en Tableau Public / Cloud). Se abre sin más. Sus tablas (`prototipo/datos/`) las escribe `entrega2.ipynb` en la misma corrida; en Tableau basta F5 (ver `prototipo/README.md`).
+`prototipo/PrototipoFinal.twbx` (Tableau Desktop 2025.2 o superior, solo local: no publicar en Tableau Public / Cloud). `PrototipoFinal.twbx` es el libro empaquetado (con su copia de las tablas): se abre sin más, en cualquier computador. `PrototipoFinal-vivo.twb` lee en vivo `prototipo/datos/`, que escribe `entrega2.ipynb` en la misma corrida. Detalle y cómo actualizar: `prototipo/README.md`.
 
 > Nota: algunos documentos de `docs/` (`hallazgos.md`, `revision_notebook_martin.md`) son de la Entrega 1 y mencionan el comando `python -m salmonera`, que ya no existe; la cadena vigente es `entrega2.ipynb`.
