@@ -4,7 +4,7 @@ Tablero en Tableau Desktop (2025.2+) que responde: ¿qué parte del sobrecosto d
 con más costo se ataca con alimentación y cuál con sanidad, y cuánto vale cada una?
 
 ## Abrir
-Abrir `Prototipo.twbx` (empaquetado) y pasar al dashboard **Screen**. Presentar: Dashboard → Presentation Mode.
+Abrir `PrototipoFinal.twbx` (empaquetado) y pasar al dashboard **Screen**. Presentar: Dashboard → Presentation Mode.
 
 ## Regenerar las tablas
 ```bash
