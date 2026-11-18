@@ -46,7 +46,7 @@ Un solo comando, desde la raíz del repositorio:
 jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=900 entrega2.ipynb
 ```
 
-**Cuánto demora:** unos 20 s en total (18 s medidos el 17-11-2026; el cálculo en sí son 11 s). Si la API del dólar no responde, cada año consultado puede sumar hasta 20 s de espera antes de pasar a la copia guardada.
+**Cuánto demora:** instalar los paquetes, ≈ 1,5 min la primera vez. El comando, entre 45 s y 1,5 min (la primera corrida en un ambiente nuevo es la más lenta); de eso, la cadena en sí son 15–25 s. Si la API del dólar no responde, cada año consultado puede sumar hasta 20 s de espera antes de pasar a la copia guardada.
 
 ### Qué deja la corrida
 
