@@ -11,6 +11,7 @@ Se integran las cuatro fuentes del caso (SQLite, CSV, JSON y la API de mindicado
 | Ruta | Qué es |
 |---|---|
 | `entrega2.ipynb` | **Cadena de la Entrega 2**, por capas (cruda → depurada → modelo → consumo), con pruebas de calidad en cada corrida |
+| `metrica.py` | **Capa semántica:** la métrica R y sus tres partes, la brecha, los pesos y las 9 definiciones alternativas (fórmulas F5 a F15), definidas una sola vez; `entrega2.ipynb` la importa y el informe y el prototipo leen lo que escribe con ella |
 | `calidad.py` | Las 34 pruebas de calidad que corre `entrega2.ipynb` (qué verifica cada una y si avisa o bloquea) |
 | `entrega1.ipynb` | Cadena de la Entrega 1, tal como se entregó (no se modifica) |
 | `PrototipoFinal.twbx` | **Prototipo en Tableau, empaquetado** (con su copia de las tablas): se abre sin más, en cualquier computador con Tableau Desktop |
@@ -46,7 +47,7 @@ Un solo comando, desde la raíz del repositorio:
 jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=900 entrega2.ipynb
 ```
 
-**Cuánto demora:** instalar los paquetes, ≈ 1,5 min la primera vez. El comando, entre 45 s y 1,5 min (la primera corrida en un ambiente nuevo es la más lenta); de eso, la cadena en sí son 15–25 s. Si la API del dólar no responde, cada año consultado puede sumar hasta 20 s de espera antes de pasar a la copia guardada.
+**Cuánto demora:** instalar los paquetes, ≈ 1,5 min la primera vez. El comando, entre 45 s y 1,5 min (la primera corrida en un ambiente nuevo es la más lenta); de eso, la cadena en sí son 15–40 s. Si la API del dólar no responde, cada año consultado puede sumar hasta 20 s de espera antes de pasar a la copia guardada.
 
 ### Qué deja la corrida
 
@@ -90,7 +91,8 @@ Cada prueba **bloquea** o **avisa**:
 
 ## Arquitectura (cómo está implementada)
 
-- **Capas:** cruda (`data/`, los archivos del caso sin modificar y la copia de la API en `data/cache/`) → depurada y modelo (en memoria, dentro del notebook) → consumo (`results/`, `figuras/`, `prototipo/datos/`).
+- **Capas:** cruda (`data/`, los archivos del caso sin modificar y la copia de la API en `data/cache/`) → depurada y modelo (en memoria, dentro del notebook) → semántica (`metrica.py`) → consumo (`results/`, `figuras/`, `prototipo/datos/`).
+- **La métrica se define una sola vez, en `metrica.py`:** el notebook arma la tabla jaula-día (fórmulas F1 a F4), se la entrega con `metrica.configurar(...)` y llama a sus funciones; no hay fórmulas de la métrica repetidas en el notebook ni en Tableau. Ahí también está la regla del 5 % con que se dice si las dos fuentes de mortalidad (operación diaria y sanidad) calzan.
 - **Se transforma después de cargar (ELT):** los archivos de origen nunca se modifican; toda limpieza y corrección se hace en el notebook y queda contada en `results/cobertura.csv`.
 - **Carga completa en cada corrida:** se recalcula todo desde los archivos de origen y se reemplazan las salidas. Dos corridas seguidas dan el mismo `cifras.json` y la misma tabla de hechos; en cada corrida se verifica que no haya filas duplicadas (H-01) ni registros perdidos (M-09).
 - **Si la API del dólar falla:** se usa la última copia guardada en `data/cache/`. Si no hay copia, las cifras en kg y CLP salen completas, las de USD dicen «no disponible» y el pie del prototipo lo declara.
@@ -106,7 +108,7 @@ R_evento  = alimento de los peces muertos en un evento (exceso sobre la basal)
 R_basal   = alimento de los peces muertos por mortalidad normal
 ```
 
-Las diferencias entre el centro más caro y el resto se reparten entre las tres partes sin residuo. Las decisiones de definición y sus alternativas están en `docs/ficha_metrica.md`; cada supuesto, en `docs/bitacora.md`.
+Las diferencias entre el centro más caro y el resto se reparten entre las tres partes sin residuo. Las fórmulas están en `metrica.py` (`DECISIONES` trae las 9 decisiones de definición con su valor principal y `ALTERNATIVAS`, las que muestra el prototipo). El FCR bruto que se reporta al directorio (alimento ÷ biomasa final) se llama «FCR bruto» en el informe y en el tablero, y `R_bruto_gerencia` en el código. Las decisiones de definición y sus alternativas están en `docs/ficha_metrica.md`; cada supuesto, en `docs/bitacora.md`.
 
 ## Prototipo
 
